@@ -13,12 +13,23 @@ class SpriteGenerator
 
     public function add_image(string $path)
     {
+        if (!file_exists($path))
+            return false;
+
         $image_size = getimagesize($path);
         array_push($this->images, array(
             'path' => $path,
             'width' => $image_size[0],
             'height' => $image_size[1]
         ));
+
+        return true;
+    }
+
+    public function add_images(array $files)
+    {
+        foreach ($files as &$f)
+            $this->add_image($f);
     }
 
     public function build_sprite(string $filename)
@@ -142,9 +153,9 @@ class SpriteGenerator
         return $result;
     }
 
-    public function set_override_size(int $x, int $y)
+    public function set_override_size(int $size)
     {
-        $this->override_size = array($x, $y);
+        $this->override_size = $size > 0 ? array($size, $size) : null;
     }
 
     public function set_max_columns(int $max)

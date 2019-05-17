@@ -3,6 +3,8 @@ require_once "SpriteGenerator.class.php";
 require_once "cli_utils.php";
 require_once "dir_utils.php";
 require_once "str_utils.php";
+require_once "manual.php";
+require_once "logging.php";
 
 function collect_png_files(string $path, bool $recursive = false)
 {
@@ -25,7 +27,8 @@ function get_default_args()
         'override-size' => 0,
         'columns-number' => 0,
         'prefix' => '',
-        'input-dir' => '.'
+        'input-dir' => null,
+        'display-help' => false
     );
 }
 
@@ -53,42 +56,64 @@ function parse_args(string $arg)
         return ['columns-number' => arg_extract_integer($arg, 0)];
     elseif (str_starts_with_v($arg, '-q', '--prefix'))
         return ['prefix' => arg_extract_string($arg, '')];
+    elseif ($arg == '--help' || $arg == '-h')
+        return ['display-help' => true];
     else
         return ['input-dir' => $arg];
+}
+
+function validate_opts($options)
+{
+    if (empty($options['input-dir']))
+        return [false, 'Unspecified asset directory.'];
+    if (false == is_dir($options['input-dir']))
+        return [false, 'Directory does not exists.'];
+    if ($options['override-size'] < 0)
+        return [false, 'Override SIZE must be positive.'];
+    if ($options['padding'] < 0)
+        return [false, 'Padding must be a positive value.'];
+
+    return true;
+}
+
+function run_generation(array $files, array $options)
+{
+    $generator = new SpriteGenerator();
+    $generator->set_override_size($options['override-size']);
+    $generator->set_max_columns($options['columns-number']);
+    $generator->set_padding($options['padding']);
+    $generator->set_selector_prefix($options['prefix']);
+    $generator->add_images($files);
+    $generator->build_sprite($options['output-image']);
+    $generator->export_stylesheet($options['output-style']);
 }
 
 function main(int $argc, array $argv): int
 {
     $options = parse_all_args($argc, $argv);
-    $input_dir = $options['input-dir'];
-    $override_size = $options['override-size'];
-
-    if (!is_dir($input_dir))
+    if ($options['display-help'])
     {
-        echo "Directory does not exists.\n";
+        man_display();
+        return 0;
+    }
+
+    $validation = validate_opts($options);
+    if (false === $validation[0])
+    {
+        print_error($validation[1]);
+        print_info("Manual is available by using the --help parameter.");
         return 84;
     }
 
-    $files = collect_png_files($input_dir, $options['recursive']);
-
+    $files = collect_png_files($options['input-dir'], $options['recursive']);
     if (empty($files))
     {
-        echo "No file(s) to process.\n";
-        return 84;
+        print_info("No files to process.");
+        return 0;
     }
 
-    $generator = new SpriteGenerator();
-    if ($override_size > 0)
-        $generator->set_override_size($override_size, $override_size);
-    $generator->set_max_columns($options['columns-number']);
-    $generator->set_padding($options['padding']);
-    $generator->set_selector_prefix($options['prefix']);
-
-    foreach ($files as &$f)
-        $generator->add_image($f);
-
-    $generator->build_sprite($options['output-image']);
-    $generator->export_stylesheet($options['output-style']);
+    run_generation($files, $options);
+    print_ok("Program completed.");
     return 0;
 }
 
