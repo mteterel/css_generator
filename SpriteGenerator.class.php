@@ -39,6 +39,7 @@ class SpriteGenerator
 
         $this->compute_positions();
         $output = imagecreatetruecolor($this->output_width, $this->output_height);
+        $this->make_transparent($output);
 
         foreach ($this->images as $img)
         {
@@ -57,6 +58,13 @@ class SpriteGenerator
         imagedestroy($output);
         $this->output_png_path = $filename;
         return true;
+    }
+
+    private function make_transparent($image)
+    {
+        $color = imagecolorallocatealpha($image, 255, 255, 255, 127);
+        imagefill($image, 0, 0, $color);
+        imagesavealpha($image, true);
     }
 
     private function compute_positions()

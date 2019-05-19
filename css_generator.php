@@ -36,30 +36,28 @@ function parse_all_args(int $argc, array $argv)
 {
     $result = get_default_args();
     for ($i = 1; $i < $argc; ++$i)
-        $result = array_merge($result, parse_args($argv[$i]));
+    {
+        $arg = $argv[$i];
+        if (str_starts_with_v($arg, '-r', '--recursive'))
+            $result['recursive'] = true;
+        elseif (str_starts_with_v($arg, '-i', '--output-image'))
+            $result['output-image'] = arg_extract_string($arg, "sprite.png");
+        elseif (str_starts_with_v($arg, '-s', '--output-style'))
+            $result['output-style'] = arg_extract_string($arg, "style.css");
+        elseif (str_starts_with_v($arg, '-p', '--padding'))
+            $result['padding'] = arg_extract_integer($arg, 0);
+        elseif (str_starts_with_v($arg, '-o', '--override-size'))
+            $result['override-size'] = arg_extract_integer($arg, 0);
+        elseif (str_starts_with_v($arg, '-c', '--columns_number'))
+            $result['columns-number'] = arg_extract_integer($arg, 0);
+        elseif (str_starts_with_v($arg, '-q', '--prefix'))
+            $result['prefix'] = arg_extract_string($arg, '');
+        elseif ($arg == '--help' || $arg == '-h')
+            $result['display-help'] = true;
+        else
+            $result['input-dir'] = $arg;
+    }
     return $result;
-}
-
-function parse_args(string $arg)
-{
-    if (str_starts_with_v($arg, '-r', '--recursive'))
-        return ['recursive' => true];
-    elseif (str_starts_with_v($arg, '-i', '--output-image'))
-        return ['output-image' => arg_extract_string($arg, "sprite.png")];
-    elseif (str_starts_with_v($arg, '-s', '--output-style'))
-        return ['output-style' => arg_extract_string($arg, "style.css")];
-    elseif (str_starts_with_v($arg, '-p', '--padding'))
-        return ['padding' => arg_extract_integer($arg, 0)];
-    elseif (str_starts_with_v($arg, '-o', '--override-size'))
-        return ['override-size' => arg_extract_integer($arg, 0)];
-    elseif (str_starts_with_v($arg, '-c', '--columns_number'))
-        return ['columns-number' => arg_extract_integer($arg, 0)];
-    elseif (str_starts_with_v($arg, '-q', '--prefix'))
-        return ['prefix' => arg_extract_string($arg, '')];
-    elseif ($arg == '--help' || $arg == '-h')
-        return ['display-help' => true];
-    else
-        return ['input-dir' => $arg];
 }
 
 function validate_opts($options)
